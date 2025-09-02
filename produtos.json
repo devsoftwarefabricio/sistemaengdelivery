@@ -1,0 +1,151 @@
+{
+  "config": {
+    "whatsappNumber": "5585984849336",
+    "habilitarAgendamento": true
+  },
+  "produtos": [
+    {
+      "id": 1756854986233,
+      "codigo": "001",
+      "nome": "Pastel de Queijo",
+      "descricao": "Recheio cremoso e derretido, irresistível.",
+      "preco": 12.5,
+      "categoria": "Salgados",
+      "cor": "",
+      "tamanhos": [],
+      "fotos": [
+        "queijo.jpg"
+      ]
+    },
+    {
+      "id": 1756855162353,
+      "codigo": "002",
+      "nome": "Pastel de Carne",
+      "descricao": "Recheio tradicional, bem temperado e suculento.",
+      "preco": 15.5,
+      "categoria": "Salgados",
+      "cor": "",
+      "tamanhos": [],
+      "fotos": [
+        "carne.jpg"
+      ]
+    },
+    {
+      "id": 1756855215634,
+      "codigo": "003",
+      "nome": "Pastel de Camarão",
+      "descricao": "Recheado com camarão bem temperado, um sabor especial.",
+      "preco": 20.5,
+      "categoria": "Salgados",
+      "cor": "",
+      "tamanhos": [],
+      "fotos": [
+        "camarao.jpg"
+      ]
+    },
+    {
+      "id": 1756855275913,
+      "codigo": "004",
+      "nome": "Pastel de Chocolate",
+      "descricao": "Doce na medida certa, com recheio de chocolate cremoso.",
+      "preco": 20.5,
+      "categoria": "Doces",
+      "cor": "",
+      "tamanhos": [],
+      "fotos": [
+        "images.jpg"
+      ]
+    },
+    {
+      "id": 1756855336393,
+      "codigo": "005",
+      "nome": "Pastel de Carne do Sol",
+      "descricao": "Recheio de carne de sol saborosa e bem temperada.",
+      "preco": 15.5,
+      "categoria": "Salgados",
+      "cor": "",
+      "tamanhos": [],
+      "fotos": [
+        "carnedosol.jpg"
+      ]
+    },
+    {
+      "id": 1756855401536,
+      "codigo": "006",
+      "nome": "Pastel Doce de Leite",
+      "descricao": "Pastel crocante com recheio de doce de leite macio.",
+      "preco": 12,
+      "categoria": "Doces",
+      "cor": "",
+      "tamanhos": [],
+      "fotos": [
+        "doce.jpg"
+      ]
+    },
+    {
+      "id": 1756855456273,
+      "codigo": "007",
+      "nome": "Pastel de Pizza",
+      "descricao": "Combinação de queijo, presunto e orégano, igual à pizza!",
+      "preco": 20,
+      "categoria": "Salgados",
+      "cor": "",
+      "tamanhos": [],
+      "fotos": [
+        "pizza.jpg"
+      ]
+    },
+    {
+      "id": 1756855552265,
+      "codigo": "008",
+      "nome": "Pastel Misto",
+      "descricao": "Queijo derretido e presunto, clássico e delicioso.",
+      "preco": 12.8,
+      "categoria": "Salgados",
+      "cor": "",
+      "tamanhos": [],
+      "fotos": [
+        "pastelmisto.jpg"
+      ]
+    },
+    {
+      "id": 1756855602440,
+      "codigo": "009",
+      "nome": "Refrigerante Lata",
+      "descricao": "Diversos sabores geladinhos.",
+      "preco": 8.5,
+      "categoria": "Bebidas",
+      "cor": "",
+      "tamanhos": [],
+      "fotos": [
+        "refriglata.jpg"
+      ]
+    },
+    {
+      "id": 1756855670760,
+      "codigo": "100",
+      "nome": "Refrigerante delrio",
+      "descricao": "O sabor regional que você adora.",
+      "preco": 8,
+      "categoria": "Bebidas",
+      "cor": "",
+      "tamanhos": [],
+      "fotos": [
+        "delriorefri.jpg"
+      ]
+    },
+    {
+      "id": 1756855791649,
+      "codigo": "110",
+      "nome": "Suco de Laranja",
+      "descricao": "Natural e refrescante.",
+      "preco": 12,
+      "categoria": "Bebidas",
+      "cor": "",
+      "tamanhos": [],
+      "fotos": [
+        "laranja.jpg"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Gestão de Produtos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display.swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .toast { visibility: hidden; min-width: 250px; margin-left: -125px; background-color: #333; color: #fff; text-align: center; border-radius: 8px; padding: 16px; position: fixed; z-index: 100; left: 50%; bottom: 30px; opacity: 0; transition: all 0.5s; }
+        .toast.show { visibility: visible; opacity: 1; bottom: 50px; }
+        .toggle-checkbox:checked { right: 0; border-color: #3b82f6; }
+        .toggle-checkbox:checked + .toggle-label { background-color: #3b82f6; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-8">
+            <div class="inline-block bg-white p-4 rounded-full shadow-md">
+                <img src="logo.png" alt="Logotipo da Empresa" class="h-30 w-30 md:h-24 md:w-24 object-cover rounded-full">
+            </div>
+            <h1 class="text-3xl md:text-4xl font-bold mt-4">Painel Administrativo</h1>
+            <p class="text-gray-500">Gestão de Produtos e Configurações</p>
+        </header>
+
+        <div class="bg-amber-100 border-l-4 border-amber-500 text-amber-700 p-4 rounded-r-lg mb-8 shadow-md" role="alert">
+            <h2 class="font-bold text-lg mb-2"><i class="fas fa-question-circle mr-2"></i>Como Funciona? (Leia com Atenção)</h2>
+            <ol class="list-decimal list-inside text-sm space-y-2">
+                <li>Este painel (`admin.html`) é sua <strong>ferramenta local</strong> para gerenciar tudo.</li>
+                <li><strong>IMPORTANTE:</strong> As fotos dos produtos, o `index.html` e o `produtos.json` devem estar <strong>todos juntos na mesma pasta</strong>.</li>
+                <li>Ao terminar de cadastrar, clique em <strong>"Exportar produtos.json"</strong>. O arquivo será salvo na sua pasta de <strong>Downloads</strong>.</li>
+                <li><strong>Mova manualmente</strong> o arquivo `produtos.json` da pasta de Downloads para a pasta da sua loja, substituindo o antigo.</li>
+                <li>Use o botão <strong>"Importar"</strong> para carregar um `produtos.json` de volta para este painel, se precisar.</li>
+            </ol>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-lg mb-8">
+            <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Ações Rápidas</h2>
+            <div class="flex flex-wrap gap-4">
+                <button onclick="exportarParaJSON()" class="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-transform transform hover:scale-105 shadow-md min-w-[200px]"><i class="fas fa-file-code mr-2"></i> Exportar produtos.json</button>
+                <button onclick="exportarParaPDF()" class="flex-1 bg-red-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-700 transition-transform transform hover:scale-105 shadow-md min-w-[200px]"><i class="fas fa-file-pdf mr-2"></i> Gerar Relatório PDF</button>
+                 <label for="importJson" class="flex-1 bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-transform transform hover:scale-105 shadow-md min-w-[200px] cursor-pointer text-center">
+                    <i class="fas fa-upload mr-2"></i> Importar produtos.json
+                    <input type="file" id="importJson" class="hidden" accept=".json" onchange="importarDeJSON(event)">
+                </label>
+            </div>
+        </div>
+        
+        <div class="bg-white p-6 rounded-2xl shadow-lg mb-8">
+            <h2 class="text-2xl font-semibold mb-6">Configurações da Loja</h2>
+            <div id="settings-form" class="space-y-4">
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <label for="whatsappNumber" class="block mb-2 font-medium">Número de WhatsApp da Loja</label>
+                    <input type="text" id="whatsappNumber" placeholder="Ex: 5511999999999" class="w-full p-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="salvarConfiguracoes()" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                    <p class="text-xs text-gray-500 mt-2"><i class="fas fa-info-circle mr-1"></i> Use apenas números: código do país + DDD + número.</p>
+                </div>
+                <div class="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
+                    <span class="font-medium">Habilitar campo "Tamanhos"</span>
+                    <div class="relative inline-block w-14 align-middle select-none transition duration-200 ease-in">
+                        <input type="checkbox" name="habilitarTamanhos" id="habilitarTamanhos" class="toggle-checkbox absolute block w-7 h-7 rounded-full bg-white border-4 appearance-none cursor-pointer" onchange="salvarConfiguracoes()"/>
+                        <label for="habilitarTamanhos" class="toggle-label block overflow-hidden h-7 rounded-full bg-gray-300 cursor-pointer"></label>
+                    </div>
+                </div>
+                 <div class="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
+                    <span class="font-medium">Habilitar campo "Cor"</span>
+                    <div class="relative inline-block w-14 align-middle select-none transition duration-200 ease-in">
+                        <input type="checkbox" name="habilitarCor" id="habilitarCor" class="toggle-checkbox absolute block w-7 h-7 rounded-full bg-white border-4 appearance-none cursor-pointer" onchange="salvarConfiguracoes()"/>
+                        <label for="habilitarCor" class="toggle-label block overflow-hidden h-7 rounded-full bg-gray-300 cursor-pointer"></label>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
+                    <span class="font-medium">Habilitar opção "Agendar Mesa"</span>
+                    <div class="relative inline-block w-14 align-middle select-none transition duration-200 ease-in">
+                        <input type="checkbox" name="habilitarAgendamento" id="habilitarAgendamento" class="toggle-checkbox absolute block w-7 h-7 rounded-full bg-white border-4 appearance-none cursor-pointer" onchange="salvarConfiguracoes()"/>
+                        <label for="habilitarAgendamento" class="toggle-label block overflow-hidden h-7 rounded-full bg-gray-300 cursor-pointer"></label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-lg mb-8">
+            <h2 class="text-2xl font-semibold mb-6" id="form-title">Cadastrar Novo Produto</h2>
+            <form id="product-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <input type="hidden" id="product-id">
+                
+                <div><label for="product-code" class="block mb-2 font-medium">Código do Produto</label><input type="text" id="product-code" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg" required></div>
+                <div><label for="product-name" class="block mb-2 font-medium">Nome do Produto</label><input type="text" id="product-name" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg" required></div>
+                <div class="md:col-span-2"><label for="product-description" class="block mb-2 font-medium">Descrição</label><textarea id="product-description" rows="4" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg" required></textarea></div>
+                <div><label for="product-price" class="block mb-2 font-medium">Preço (R$)</label><input type="text" id="product-price" oninput="validarPreco(this)" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg" required></div>
+                <div><label for="product-category" class="block mb-2 font-medium">Categoria</label><input type="text" id="product-category" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg" required></div>
+                
+                <div id="campo-cor" class="hidden"><label for="product-color" class="block mb-2 font-medium">Cor</label><input type="text" id="product-color" class="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg"></div>
+                <div id="campo-tamanhos" class="md:col-span-2 hidden"><label class="block mb-2 font-medium">Tamanhos Disponíveis</label><div class="flex flex-wrap gap-3 items-center"><div class="flex items-center"><input type="checkbox" id="size-P" name="product-size" value="P" class="hidden peer"><label for="size-P" class="px-4 py-2 border border-gray-300 bg-white rounded-lg cursor-pointer font-medium text-gray-700 transition-colors duration-200 ease-in-out hover:bg-gray-100 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600">P</label></div><div class="flex items-center"><input type="checkbox" id="size-M" name="product-size" value="M" class="hidden peer"><label for="size-M" class="px-4 py-2 border border-gray-300 bg-white rounded-lg cursor-pointer font-medium text-gray-700 transition-colors duration-200 ease-in-out hover:bg-gray-100 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600">M</label></div><div class="flex items-center"><input type="checkbox" id="size-G" name="product-size" value="G" class="hidden peer"><label for="size-G" class="px-4 py-2 border border-gray-300 bg-white rounded-lg cursor-pointer font-medium text-gray-700 transition-colors duration-200 ease-in-out hover:bg-gray-100 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600">G</label></div><div class="flex items-center"><input type="checkbox" id="size-GG" name="product-size" value="GG" class="hidden peer"><label for="size-GG" class="px-4 py-2 border border-gray-300 bg-white rounded-lg cursor-pointer font-medium text-gray-700 transition-colors duration-200 ease-in-out hover:bg-gray-100 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600">GG</label></div><div class="flex items-center"><input type="checkbox" id="size-XGG" name="product-size" value="XGG" class="hidden peer"><label for="size-XGG" class="px-4 py-2 border border-gray-300 bg-white rounded-lg cursor-pointer font-medium text-gray-700 transition-colors duration-200 ease-in-out hover:bg-gray-100 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600">XGG</label></div></div></div>
+                <div class="md:col-span-2"><h3 class="font-medium mb-2">Fotos do Produto</h3><p class="text-xs text-gray-500 mb-4"><i class="fas fa-info-circle mr-1"></i><b>Importante:</b> Use nomes de arquivo sem espaços ou acentos (ex: `camiseta-preta.jpg`).</p><div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4"><div class="flex flex-col items-center"><img id="photo-preview1" src="https://placehold.co/150x150/f0f0f0/333?text=Foto+1" class="w-32 h-32 object-cover rounded-lg mb-2 border"><label for="product-photo1" class="w-full text-center bg-gray-200 text-gray-700 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-300 text-sm"><i class="fas fa-camera mr-1"></i> Carregar Foto 1</label><input type="file" id="product-photo1" class="hidden" accept="image/*" onchange="previewImage(1)"></div><div class="flex flex-col items-center"><img id="photo-preview2" src="https://placehold.co/150x150/f0f0f0/333?text=Foto+2" class="w-32 h-32 object-cover rounded-lg mb-2 border"><label for="product-photo2" class="w-full text-center bg-gray-200 text-gray-700 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-300 text-sm"><i class="fas fa-camera mr-1"></i> Carregar Foto 2</label><input type="file" id="product-photo2" class="hidden" accept="image/*" onchange="previewImage(2)"></div><div class="flex flex-col items-center"><img id="photo-preview3" src="https://placehold.co/150x150/f0f0f0/333?text=Foto+3" class="w-32 h-32 object-cover rounded-lg mb-2 border"><label for="product-photo3" class="w-full text-center bg-gray-200 text-gray-700 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-300 text-sm"><i class="fas fa-camera mr-1"></i> Carregar Foto 3</label><input type="file" id="product-photo3" class="hidden" accept="image/*" onchange="previewImage(3)"></div><div class="flex flex-col items-center"><img id="photo-preview4" src="https://placehold.co/150x150/f0f0f0/333?text=Foto+4" class="w-32 h-32 object-cover rounded-lg mb-2 border"><label for="product-photo4" class="w-full text-center bg-gray-200 text-gray-700 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-300 text-sm"><i class="fas fa-camera mr-1"></i> Carregar Foto 4</label><input type="file" id="product-photo4" class="hidden" accept="image/*" onchange="previewImage(4)"></div><div class="flex flex-col items-center"><img id="photo-preview5" src="https://placehold.co/150x150/f0f0f0/333?text=Foto+5" class="w-32 h-32 object-cover rounded-lg mb-2 border"><label for="product-photo5" class="w-full text-center bg-gray-200 text-gray-700 px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-300 text-sm"><i class="fas fa-camera mr-1"></i> Carregar Foto 5</label><input type="file" id="product-photo5" class="hidden" accept="image/*" onchange="previewImage(5)"></div></div></div>
+                <div class="md:col-span-2 flex items-center justify-end gap-4 mt-4"><button type="button" onclick="cancelarEdicao()" id="cancel-edit-btn" class="hidden bg-gray-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-600">Cancelar</button><button type="submit" class="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 shadow-lg"><i class="fas fa-plus-circle mr-2"></i><span id="submit-btn-text">Adicionar Produto</span></button></div>
+            </form>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-lg">
+            <h2 class="text-2xl font-semibold mb-4">Produtos Cadastrados</h2>
+            <div id="product-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        let produtos = [];
+        let lojaConfig = { 
+            whatsappNumber: '', 
+            habilitarTamanhos: true, 
+            habilitarCor: true,
+            habilitarAgendamento: true
+        };
+
+        const form = document.getElementById('product-form');
+        
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = "toast show";
+            setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+        }
+
+        function validarPreco(input) {
+            input.value = input.value.replace(/[^0-9,.]/g, '').replace(/,/g, '.');
+            const parts = input.value.split('.');
+            if (parts.length > 2) input.value = parts[0] + '.' + parts.slice(1).join('');
+        }
+        
+        function sanitizarFilename(filename) {
+            if (!filename) return '';
+            const extensao = filename.split('.').pop();
+            const nome = filename.substring(0, filename.lastIndexOf('.'));
+            return nome.toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') + '.' + extensao;
+        }
+
+        function sanitizarTexto(texto) {
+            const tempDiv = document.createElement('div');
+            tempDiv.textContent = texto;
+            return tempDiv.innerHTML;
+        }
+        
+        function salvarConfiguracoes() {
+            lojaConfig.whatsappNumber = document.getElementById('whatsappNumber').value.trim();
+            lojaConfig.habilitarTamanhos = document.getElementById('habilitarTamanhos').checked;
+            lojaConfig.habilitarCor = document.getElementById('habilitarCor').checked;
+            lojaConfig.habilitarAgendamento = document.getElementById('habilitarAgendamento').checked;
+            localStorage.setItem('lojaConfig', JSON.stringify(lojaConfig));
+            aplicarConfiguracoesNoForm();
+            showToast('Configurações salvas!');
+        }
+
+        function carregarConfiguracoes() {
+            const configSalva = localStorage.getItem('lojaConfig');
+            if (configSalva) lojaConfig = JSON.parse(configSalva);
+            if (lojaConfig.habilitarAgendamento === undefined) lojaConfig.habilitarAgendamento = true;
+            document.getElementById('whatsappNumber').value = lojaConfig.whatsappNumber || '';
+            document.getElementById('habilitarTamanhos').checked = lojaConfig.habilitarTamanhos;
+            document.getElementById('habilitarCor').checked = lojaConfig.habilitarCor;
+            document.getElementById('habilitarAgendamento').checked = lojaConfig.habilitarAgendamento;
+            aplicarConfiguracoesNoForm();
+        }
+
+        function aplicarConfiguracoesNoForm() {
+            document.getElementById('campo-tamanhos').style.display = lojaConfig.habilitarTamanhos ? 'block' : 'none';
+            document.getElementById('campo-cor').style.display = lojaConfig.habilitarCor ? 'block' : 'none';
+            renderizarProdutos();
+        }
+
+        function previewImage(index) {
+            const input = document.getElementById(`product-photo${index}`);
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = e => document.getElementById(`photo-preview${index}`).src = e.target.result;
+                reader.readAsDataURL(file);
+                input.dataset.filename = sanitizarFilename(file.name);
+            }
+        }
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const id = document.getElementById('product-id').value;
+            const fotos = [1, 2, 3, 4, 5].map(i => {
+                const input = document.getElementById(`product-photo${i}`);
+                return input.files.length > 0 ? sanitizarFilename(input.files[0].name) : input.dataset.filename;
+            }).filter(Boolean);
+
+            const preco = document.getElementById('product-price').value.replace(',', '.');
+
+            if (isNaN(parseFloat(preco)) || parseFloat(preco) <= 0) {
+                showToast('Erro: O preço inserido é inválido.'); return;
+            }
+             if (fotos.length === 0) {
+                showToast('Erro: Adicione pelo menos uma foto ao produto.'); return;
+            }
+
+            const produto = {
+                id: id ? parseInt(id) : Date.now(),
+                codigo: sanitizarTexto(document.getElementById('product-code').value.trim()),
+                nome: sanitizarTexto(document.getElementById('product-name').value.trim()),
+                descricao: sanitizarTexto(document.getElementById('product-description').value.trim()),
+                preco: parseFloat(preco),
+                categoria: sanitizarTexto(document.getElementById('product-category').value.trim()),
+                cor: lojaConfig.habilitarCor ? sanitizarTexto(document.getElementById('product-color').value.trim()) : '',
+                tamanhos: lojaConfig.habilitarTamanhos ? Array.from(document.querySelectorAll('input[name="product-size"]:checked')).map(el => el.value) : [],
+                fotos: fotos
+            };
+
+            if (id) {
+                const index = produtos.findIndex(p => p.id === parseInt(id));
+                produtos[index] = produto;
+                showToast('Produto atualizado!');
+            } else {
+                produtos.push(produto);
+                showToast('Produto adicionado!');
+            }
+
+            salvarLocalmente();
+            renderizarProdutos();
+            cancelarEdicao();
+        });
+        
+        function renderizarProdutos() {
+            const productList = document.getElementById('product-list');
+            productList.innerHTML = produtos.length === 0 ? `<p class="text-gray-500 md:col-span-3 text-center">Nenhum produto cadastrado.</p>` : '';
+            produtos.forEach(produto => {
+                const card = document.createElement('div');
+                card.className = 'bg-gray-50 border border-gray-200 p-5 rounded-xl shadow-sm hover:shadow-md transition-shadow';
+                const imagemSrc = produto.fotos && produto.fotos[0] ? produto.fotos[0] : 'https://placehold.co/400x300/f0f0f0/333?text=Sem+Imagem';
+                card.innerHTML = `
+                    <img src="${imagemSrc}" onerror="this.src='https://placehold.co/400x300/f0f0f0/333?text=Verifique+o+Arquivo'" alt="${produto.nome}" class="w-full h-40 object-cover rounded-lg mb-4">
+                    <h3 class="text-xl font-bold">${produto.nome}</h3>
+                    <p class="text-gray-500 text-sm font-semibold">Cód: ${produto.codigo}</p>
+                    <p class="text-green-600 font-semibold text-lg">R$ ${produto.preco.toFixed(2).replace('.', ',')}</p>
+                    ${lojaConfig.habilitarCor && produto.cor ? `<p class="text-gray-600 text-sm">Cor: ${produto.cor}</p>` : ''}
+                    <div class="flex flex-wrap gap-2 my-2 min-h-[24px]">
+                        ${lojaConfig.habilitarTamanhos ? produto.tamanhos.map(t => `<span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">${t}</span>`).join('') : ''}
+                    </div>
+                    <div class="flex justify-end gap-3 mt-4">
+                        <button onclick="editarProduto(${produto.id})" class="text-blue-600 hover:text-blue-800"><i class="fas fa-edit fa-lg"></i></button>
+                        <button onclick="excluirProduto(${produto.id})" class="text-red-600 hover:text-red-800"><i class="fas fa-trash fa-lg"></i></button>
+                    </div>
+                `;
+                productList.appendChild(card);
+            });
+        }
+
+        function editarProduto(id) {
+            const produto = produtos.find(p => p.id === id);
+            if (!produto) return;
+            cancelarEdicao();
+
+            document.getElementById('product-id').value = produto.id;
+            document.getElementById('product-code').value = produto.codigo;
+            document.getElementById('product-name').value = produto.nome;
+            document.getElementById('product-description').value = produto.descricao;
+            document.getElementById('product-price').value = produto.preco.toFixed(2).replace('.', ',');
+            document.getElementById('product-category').value = produto.categoria;
+            
+            if (lojaConfig.habilitarCor) {
+                document.getElementById('product-color').value = produto.cor;
+            }
+            if (lojaConfig.habilitarTamanhos) {
+                document.querySelectorAll('input[name="product-size"]').forEach(cb => {
+                    cb.checked = produto.tamanhos.includes(cb.value);
+                });
+            }
+
+            produto.fotos.forEach((foto, i) => {
+                if (i < 5) {
+                    const preview = document.getElementById(`photo-preview${i + 1}`);
+                    const input = document.getElementById(`product-photo${i + 1}`);
+                    preview.src = foto; 
+                    preview.onerror = () => { preview.src = 'https://placehold.co/150x150/f0f0f0/333?text=Foto+N%C3%A3o+Encontrada'; };
+                    input.dataset.filename = foto;
+                }
+            });
+
+            document.getElementById('form-title').textContent = 'Editando Produto';
+            document.getElementById('submit-btn-text').textContent = 'Salvar Alterações';
+            document.getElementById('cancel-edit-btn').classList.remove('hidden');
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function cancelarEdicao() {
+            form.reset();
+            document.getElementById('product-id').value = '';
+            document.getElementById('form-title').textContent = 'Cadastrar Novo Produto';
+            document.getElementById('submit-btn-text').textContent = 'Adicionar Produto';
+            document.getElementById('cancel-edit-btn').classList.add('hidden');
+            [1, 2, 3, 4, 5].forEach(i => {
+                document.getElementById(`photo-preview${i}`).src = `https://placehold.co/150x150/f0f0f0/333?text=Foto+${i}`;
+                const input = document.getElementById(`product-photo${i}`);
+                delete input.dataset.filename;
+                input.value = "";
+            });
+        }
+
+        function excluirProduto(id) {
+            if (confirm('Tem certeza que deseja excluir este produto? A ação não pode ser desfeita.')) {
+                produtos = produtos.filter(p => p.id !== id);
+                salvarLocalmente();
+                renderizarProdutos();
+                showToast('Produto excluído!');
+            }
+        }
+
+        function salvarLocalmente() {
+            localStorage.setItem('produtosAdmin', JSON.stringify(produtos));
+        }
+
+        function carregarLocalmente() {
+            const produtosSalvos = localStorage.getItem('produtosAdmin');
+            if (produtosSalvos) produtos = JSON.parse(produtosSalvos);
+            renderizarProdutos();
+        }
+
+        function exportarParaJSON() {
+            if (produtos.length === 0 && !lojaConfig.whatsappNumber) {
+                showToast('Nada para exportar. Adicione produtos ou configure o WhatsApp.');
+                return;
+            }
+            const data = { config: lojaConfig, produtos: produtos };
+            const dataStr = JSON.stringify(data, null, 2);
+            const link = document.createElement('a');
+            link.href = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+            link.download = 'produtos.json';
+            link.click();
+            showToast('Arquivo produtos.json gerado!');
+        }
+        
+        function importarDeJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (produtos.length > 0 && !confirm('Isso irá substituir a lista atual. Deseja continuar?')) {
+                event.target.value = ''; 
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = e => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data && data.produtos && Array.isArray(data.produtos)) {
+                        produtos = data.produtos;
+                        if (data.config) {
+                            lojaConfig = data.config;
+                            localStorage.setItem('lojaConfig', JSON.stringify(lojaConfig));
+                        }
+                        salvarLocalmente();
+                        carregarConfiguracoes();
+                        renderizarProdutos();
+                        cancelarEdicao();
+                        showToast('Produtos importados com sucesso!');
+                    } else throw new Error('O arquivo não contém a estrutura `produtos: []`.');
+                } catch (error) {
+                    showToast(`Erro ao importar: ${error.message}`);
+                } finally {
+                    event.target.value = '';
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function exportarParaPDF() {
+            if (produtos.length === 0) return showToast('Nenhum produto para gerar relatório.');
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const tableColumn = ["Cód.", "Nome", "Preço (R$)", "Categoria", "Tamanhos", "Cor"];
+            const tableRows = produtos.map(p => [p.codigo, p.nome, p.preco.toFixed(2), p.categoria, p.tamanhos.join(', '), p.cor]);
+            doc.text("Relatório de Produtos Cadastrados", 14, 15);
+            doc.autoTable({ head: [tableColumn], body: tableRows, startY: 20 });
+            doc.save("relatorio_produtos.pdf");
+            showToast('Relatório PDF gerado!');
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            carregarConfiguracoes();
+            carregarLocalmente();
+        });
+    </script>
+</body>
+</html>
