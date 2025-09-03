@@ -12,6 +12,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
     <style>
         body { font-family: 'Inter', sans-serif; scroll-behavior: smooth; background-color: #f8fafc; }
+        /* ## CORREÇÃO DE RESPONSIVIDADE ##: A classe 'overflow-hidden' será adicionada via JS para travar o scroll */
+        body.overflow-hidden { overflow: hidden; }
         .fade-in { animation: fadeIn 0.8s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         ::-webkit-scrollbar { width: 8px; }
@@ -28,7 +30,6 @@
         .invalid-field { border-color: #ef4444 !important; }
         .invalid-field:focus { outline: none; box-shadow: 0 0 0 2px #ef4444; }
         input[type="date"]:invalid::-webkit-calendar-picker-indicator, input[type="time"]:invalid::-webkit-calendar-picker-indicator { filter: invert(0.5); }
-        /* CSS PARA O NOVO MODAL (BOTTOM SHEET) */
         #bottom-sheet-container.opacity-100 { opacity: 1; }
     </style>
 </head>
@@ -60,16 +61,12 @@
         </div>
     </footer>
 
-    <!-- ## CORREÇÃO DE RESPONSIVIDADE ##: Estrutura do carrinho totalmente refeita para funcionar como um app nativo -->
     <div id="cart-sidebar" class="fixed top-0 right-0 h-full w-full sm:max-w-md bg-white shadow-2xl transform translate-x-full transition-transform duration-300 ease-in-out z-50 flex flex-col">
-        <!-- 1. Cabeçalho (Fixo) -->
         <div class="p-4 flex justify-between items-center border-b flex-shrink-0">
             <h2 class="text-2xl font-bold text-slate-900">Seu Carrinho</h2>
             <button onclick="toggleCart()" class="text-slate-600 hover:text-slate-900"><i class="fas fa-times fa-lg"></i></button>
         </div>
-        <!-- 2. Área de Itens (Com rolagem) -->
         <div id="cart-items" class="flex-grow p-4 overflow-y-auto"></div>
-        <!-- 3. Rodapé do Carrinho (Fixo e sempre visível) -->
         <div id="cart-footer-sticky" class="p-4 border-t bg-slate-50 flex-shrink-0">
             <div class="flex justify-between items-center font-bold text-xl mb-4"><span>Total:</span><span id="cart-total" class="text-sky-600">R$ 0,00</span></div>
             <div class="mb-4">
@@ -80,7 +77,6 @@
                     <div id="agendar-option-container"><input type="radio" id="option-schedule" name="order-option" value="Agendar Mesa" class="hidden peer" onchange="handleOrderOptionChange()"><label for="option-schedule" class="block p-3 border rounded-lg cursor-pointer text-center text-sm peer-checked:bg-sky-600 peer-checked:text-white peer-checked:border-sky-600 transition-colors"><i class="fas fa-calendar-alt block mb-1"></i> Agendar</label></div>
                 </div>
             </div>
-            <!-- Formulário com rolagem interna para evitar que o teclado do celular cubra os campos -->
             <div class="space-y-3 mb-4 max-h-[25vh] overflow-y-auto" id="checkout-form">
                 <div id="address-field"><input type="text" id="customer-address" placeholder="Seu endereço para entrega" class="w-full p-3 border rounded-lg"></div>
                 <div id="schedule-fields" class="hidden space-y-3">
@@ -103,7 +99,6 @@
     
     <div id="toast-notification" class="fixed bottom-5 right-5 bg-slate-900 text-white py-3 px-6 rounded-lg shadow-xl transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-3"><i class="fas fa-check-circle text-green-400"></i> Item adicionado ao carrinho!</div>
     
-    <!-- ## CORREÇÃO DE RESPONSIVIDADE ##: Modal antigo foi removido. Este é o novo modal "Bottom Sheet" -->
     <div id="bottom-sheet-container" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[60] transition-opacity duration-300 opacity-0" onclick="closeCartConfirmationModal()">
         <div id="bottom-sheet-content" class="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-6 transform translate-y-full transition-transform duration-300 ease-in-out" onclick="event.stopPropagation()">
             <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-4"></div>
@@ -121,29 +116,54 @@
     
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js" defer></script>
     <script>
-        // ## CORREÇÃO DE CARRINHO ##: Lógica de armazenamento alterada para sessionStorage para garantir compras individuais.
-        // As demais lógicas foram mantidas e ajustadas para as novas interfaces.
-
         let allProducts = []; let cart = []; let lojaConfig = {}; let empresaWhatsappNumber = '5511999999999';
         let primeiroItemAdicionado = false;
+
+        // ## CORREÇÃO DE RESPONSIVIDADE ##: Nova função para travar a rolagem da página
+        function toggleBodyScroll(lock) {
+            document.body.classList.toggle('overflow-hidden', lock);
+        }
 
         document.addEventListener('DOMContentLoaded', () => { fetchProducts(); loadCart(); document.getElementById('checkout-form').addEventListener('input', validarFormularioCheckout); handleOrderOptionChange(); const today = new Date().toISOString().split('T')[0]; document.getElementById('schedule-date').setAttribute('min', today); });
         async function fetchProducts() { try { const response = await fetch(`produtos.json?v=${new Date().getTime()}`); if (!response.ok) throw new Error(`Arquivo produtos.json não encontrado.`); const data = await response.json(); lojaConfig = data.config || {}; allProducts = data.produtos; empresaWhatsappNumber = lojaConfig.whatsappNumber || empresaWhatsappNumber; applyStoreConfig(); renderCarousels(); syncCartWithProducts(); } catch (error) { console.warn(`Aviso: ${error.message}.`); renderCarousels(); } }
         function applyStoreConfig() { const agendarOptionContainer = document.getElementById('agendar-option-container'); const orderOptionsGrid = document.getElementById('order-options'); const agendamentoHabilitado = lojaConfig.habilitarAgendamento !== false; if (agendamentoHabilitado) { agendarOptionContainer.style.display = 'block'; orderOptionsGrid.classList.remove('grid-cols-2'); orderOptionsGrid.classList.add('grid-cols-3'); } else { agendarOptionContainer.style.display = 'none'; orderOptionsGrid.classList.remove('grid-cols-3'); orderOptionsGrid.classList.add('grid-cols-2'); if (document.getElementById('option-schedule').checked) { document.getElementById('option-delivery').checked = true; handleOrderOptionChange(); } } }
         function renderCarousels() { const container = document.getElementById('product-carousels'); container.innerHTML = ''; const productsByCategory = allProducts.reduce((acc, product) => { (acc[product.categoria] = acc[product.categoria] || []).push(product); return acc; }, {}); if (Object.keys(productsByCategory).length === 0) { container.innerHTML = `<p class="text-center text-slate-500">Nenhum produto cadastrado no momento.</p>`; return; } for (const category in productsByCategory) { container.innerHTML += `<div class="category-section"><h2 class="text-2xl font-bold mb-5 text-slate-900">${category}</h2><div class="swiper-container"><div class="swiper-wrapper">${productsByCategory[category].map(product => `<div class="swiper-slide"><div class="bg-white rounded-lg shadow-md overflow-hidden group transition-all duration-300 hover:shadow-xl h-full flex flex-col"><div onclick="openModal(${product.id})" class="cursor-pointer"><img src="${product.fotos[0]}" onerror="this.src='https://placehold.co/500x500/e2e8f0/64748b?text=Imagem'" alt="${product.nome}" class="w-full h-48 sm:h-64 object-cover group-hover:scale-105 transition-transform duration-300"></div><div class="p-4 flex-grow flex flex-col justify-between"><div><h3 onclick="openModal(${product.id})" class="font-semibold text-lg truncate cursor-pointer text-slate-800 group-hover:text-sky-600 transition-colors">${product.nome}</h3></div><div class="mt-4 flex justify-between items-center"><p class="text-slate-900 font-bold text-xl">R$ ${product.preco.toFixed(2).replace('.', ',')}</p><button onclick="quickAddToCart(${product.id})" class="bg-sky-600 text-white rounded-full w-11 h-11 flex items-center justify-center shadow-lg hover:bg-sky-700 transition-all transform hover:scale-110 flex-shrink-0"><i class="fas fa-plus"></i></button></div></div></div></div>`).join('')}</div><div class="swiper-button-next"></div><div class="swiper-button-prev"></div></div></div>`; } new Swiper('.swiper-container', { loop: false, slidesPerView: 1.4, spaceBetween: 16, navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' }, breakpoints: { 640: { slidesPerView: 2.5 }, 768: { slidesPerView: 3.5 }, 1024: { slidesPerView: 4.5 } } }); }
-        function openModal(productId) { const product = allProducts.find(p => p.id === productId); if (!product) return; const modal = document.getElementById('product-modal'); const modalContent = document.getElementById('modal-content'); const corHtml = lojaConfig.habilitarCor && product.cor ? `<p class="text-slate-500 text-sm mb-4">Cor: ${product.cor}</p>` : ''; const tamanhosHtml = lojaConfig.habilitarTamanhos && product.tamanhos.length > 0 ? `<div class="mb-6"><label for="size-select" class="block text-sm font-medium text-slate-700 mb-1">Tamanho:</label><select id="size-select" class="w-full p-3 border border-slate-300 rounded-md bg-white">${product.tamanhos.map(size => `<option value="${size}">${size}</option>`).join('')}</select></div>` : '<input type="hidden" id="size-select" value="Único">'; modalContent.innerHTML = `<div class="w-full md:w-1/2 p-4 flex-shrink-0"><img src="${product.fotos[0]}" onerror="this.src='https://placehold.co/500x500/e2e8f0/64748b?text=Imagem'" alt="${product.nome}" class="w-full h-64 md:h-full object-contain rounded-lg"></div><div class="w-full md:w-1/2 p-6 flex flex-col justify-center relative"><button onclick="closeModal()" class="absolute top-4 right-4 text-2xl text-slate-600 hover:text-black">&times;</button><h2 class="text-2xl md:text-3xl font-bold mb-2 text-slate-900">${product.nome}</h2><p class="text-xl md:text-2xl font-bold text-sky-600 mb-4">R$ ${product.preco.toFixed(2).replace('.', ',')}</p>${corHtml}<p class="text-slate-600 mb-6">${product.descricao}</p>${tamanhosHtml}<button onclick="addToCartFromModal(${product.id})" class="w-full bg-sky-600 text-white py-3 rounded-lg font-bold hover:bg-sky-700 transition-colors">Adicionar ao Carrinho</button></div>`; modal.classList.remove('hidden'); modal.classList.add('flex'); setTimeout(() => modalContent.classList.remove('scale-95'), 10); }
-        function closeModal() { document.getElementById('product-modal').classList.add('hidden'); document.getElementById('modal-content').classList.add('scale-95'); }
+        
+        function openModal(productId) { 
+            const product = allProducts.find(p => p.id === productId); if (!product) return; 
+            const modal = document.getElementById('product-modal'); 
+            const modalContent = document.getElementById('modal-content'); 
+            const corHtml = lojaConfig.habilitarCor && product.cor ? `<p class="text-slate-500 text-sm mb-4">Cor: ${product.cor}</p>` : ''; 
+            const tamanhosHtml = lojaConfig.habilitarTamanhos && product.tamanhos.length > 0 ? `<div class="mb-6"><label for="size-select" class="block text-sm font-medium text-slate-700 mb-1">Tamanho:</label><select id="size-select" class="w-full p-3 border border-slate-300 rounded-md bg-white">${product.tamanhos.map(size => `<option value="${size}">${size}</option>`).join('')}</select></div>` : '<input type="hidden" id="size-select" value="Único">'; 
+            modalContent.innerHTML = `<div class="w-full md:w-1/2 p-4 flex-shrink-0"><img src="${product.fotos[0]}" onerror="this.src='https://placehold.co/500x500/e2e8f0/64748b?text=Imagem'" alt="${product.nome}" class="w-full h-64 md:h-full object-contain rounded-lg"></div><div class="w-full md:w-1/2 p-6 flex flex-col justify-center relative"><button onclick="closeModal()" class="absolute top-4 right-4 text-2xl text-slate-600 hover:text-black">&times;</button><h2 class="text-2xl md:text-3xl font-bold mb-2 text-slate-900">${product.nome}</h2><p class="text-xl md:text-2xl font-bold text-sky-600 mb-4">R$ ${product.preco.toFixed(2).replace('.', ',')}</p>${corHtml}<p class="text-slate-600 mb-6">${product.descricao}</p>${tamanhosHtml}<button onclick="addToCartFromModal(${product.id})" class="w-full bg-sky-600 text-white py-3 rounded-lg font-bold hover:bg-sky-700 transition-colors">Adicionar ao Carrinho</button></div>`; 
+            modal.classList.remove('hidden'); 
+            modal.classList.add('flex'); 
+            setTimeout(() => modalContent.classList.remove('scale-95'), 10);
+            toggleBodyScroll(true); // Trava o scroll
+        }
+        function closeModal() { 
+            document.getElementById('product-modal').classList.add('hidden'); 
+            document.getElementById('modal-content').classList.add('scale-95');
+            toggleBodyScroll(false); // Destrava o scroll
+        }
+
         function addToCartFromModal(productId) { addProductToCart(productId, document.getElementById('size-select').value); closeModal(); }
         function quickAddToCart(productId) { const product = allProducts.find(p => p.id === productId); if (!product) return; const size = (lojaConfig.habilitarTamanhos && product.tamanhos.length > 0) ? product.tamanhos[0] : 'Único'; addProductToCart(productId, size); }
         function addProductToCart(productId, size) { const product = allProducts.find(p => p.id === productId); const uniqueId = `${productId}-${size}`; const productInCart = cart.find(item => item.uniqueId === uniqueId); if (productInCart) productInCart.quantidade++; else cart.push({ ...product, tamanho: size, uniqueId, quantidade: 1 }); saveCart(); updateCartUI(); if (!primeiroItemAdicionado) { openCartConfirmationModal(); primeiroItemAdicionado = true; } else { showToast(); } }
         function showToast() { const toast = document.getElementById('toast-notification'); toast.classList.remove('translate-y-20', 'opacity-0'); setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 2000); }
         
-        // ## CORREÇÃO DE RESPONSIVIDADE ##: Funções para controlar o novo "Bottom Sheet"
-        function openCartConfirmationModal() { const container = document.getElementById('bottom-sheet-container'); const content = document.getElementById('bottom-sheet-content'); container.classList.remove('hidden'); setTimeout(() => { container.classList.add('opacity-100'); content.classList.remove('translate-y-full'); }, 10); }
-        function closeCartConfirmationModal() { const container = document.getElementById('bottom-sheet-container'); const content = document.getElementById('bottom-sheet-content'); container.classList.remove('opacity-100'); content.classList.add('translate-y-full'); setTimeout(() => { container.classList.add('hidden'); }, 300); }
-        function goToCart() { closeCartConfirmationModal(); setTimeout(() => { const cartSidebar = document.getElementById('cart-sidebar'); if (cartSidebar.classList.contains('translate-x-full')) { toggleCart(); } }, 300); }
+        function openCartConfirmationModal() { const container = document.getElementById('bottom-sheet-container'); const content = document.getElementById('bottom-sheet-content'); container.classList.remove('hidden'); setTimeout(() => { container.classList.add('opacity-100'); content.classList.remove('translate-y-full'); }, 10); toggleBodyScroll(true); } // Trava o scroll
+        function closeCartConfirmationModal() { const container = document.getElementById('bottom-sheet-container'); const content = document.getElementById('bottom-sheet-content'); container.classList.remove('opacity-100'); content.classList.add('translate-y-full'); setTimeout(() => { container.classList.add('hidden'); }, 300); toggleBodyScroll(false); } // Destrava o scroll
         
-        function toggleCart() { document.getElementById('cart-sidebar').classList.toggle('translate-x-full'); }
+        function goToCart() { closeCartConfirmationModal(); setTimeout(() => { if (document.getElementById('cart-sidebar').classList.contains('translate-x-full')) { toggleCart(); } }, 300); }
+        
+        function toggleCart() {
+            const cartSidebar = document.getElementById('cart-sidebar');
+            const isOpening = cartSidebar.classList.contains('translate-x-full');
+            cartSidebar.classList.toggle('translate-x-full');
+            toggleBodyScroll(isOpening); // Trava se estiver abrindo, destrava se estiver fechando
+        }
+
         function updateCartUI() { const cartItemsContainer = document.getElementById('cart-items'); const cartCount = document.getElementById('cart-count'); const cartTotal = document.getElementById('cart-total'); let totalEmCentavos = 0; cartItemsContainer.innerHTML = cart.length === 0 ? '<div class="text-center p-8"><i class="fas fa-shopping-cart text-4xl text-slate-300 mb-4"></i><p class="text-slate-500">Seu carrinho está vazio.</p></div>' : ''; cart.forEach(item => { totalEmCentavos += (item.preco * 100) * item.quantidade; const tamanhoHtml = lojaConfig.habilitarTamanhos && item.tamanho !== 'Único' ? `<p class="text-sm text-slate-600">Tamanho: ${item.tamanho}</p>` : ''; cartItemsContainer.innerHTML += `<div class="flex items-start justify-between mb-4 pb-4 border-b last:border-b-0"><img src="${item.fotos[0]}" onerror="this.src='https://placehold.co/150x150/e2e8f0/64748b?text=Img'" alt="${item.nome}" class="w-20 h-20 object-cover rounded-md"><div class="flex-grow mx-3"><p class="font-bold text-slate-800">${item.nome}</p>${tamanhoHtml}<p class="text-sm font-semibold text-slate-700">R$ ${item.preco.toFixed(2).replace('.', ',')}</p><div class="flex items-center space-x-3 mt-2"><button onclick="decreaseQuantity('${item.uniqueId}')" class="w-7 h-7 bg-slate-200 rounded-full font-bold flex items-center justify-center hover:bg-slate-300">-</button><span class="font-bold text-md">${item.quantidade}</span><button onclick="increaseQuantity('${item.uniqueId}')" class="w-7 h-7 bg-slate-200 rounded-full font-bold flex items-center justify-center hover:bg-slate-300">+</button></div></div><button onclick="removeFromCart('${item.uniqueId}')" class="text-red-500 hover:text-red-700 transition-colors p-2"><i class="fas fa-trash"></i></button></div>`; }); cartCount.textContent = cart.reduce((acc, item) => acc + item.quantidade, 0); cartTotal.textContent = `R$ ${(totalEmCentavos / 100).toFixed(2).replace('.', ',')}`; validarFormularioCheckout(); }
         const increaseQuantity = (id) => changeQuantity(id, 1); const decreaseQuantity = (id) => changeQuantity(id, -1);
         function changeQuantity(uniqueId, amount) { const item = cart.find(item => item.uniqueId === uniqueId); if (item) { item.quantidade += amount; if (item.quantidade <= 0) removeFromCart(uniqueId); else { saveCart(); updateCartUI(); } } }
@@ -160,3 +180,4 @@
     </script>
 </body>
 </html>
+
