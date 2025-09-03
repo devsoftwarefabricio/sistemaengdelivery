@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <title>Sua Loja Online</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -103,10 +107,11 @@
             </div>
         </div>
     </div>
+
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js" defer></script>
     <script>
         let allProducts = []; let cart = []; let lojaConfig = {}; let empresaWhatsappNumber = '5511999999999';
-        let primeiroItemAdicionado = false; // NOVA VARIÁVEL DE CONTROLE
+        let primeiroItemAdicionado = false;
 
         document.addEventListener('DOMContentLoaded', () => { fetchProducts(); loadCart(); document.getElementById('checkout-form').addEventListener('input', validarFormularioCheckout); handleOrderOptionChange(); const today = new Date().toISOString().split('T')[0]; document.getElementById('schedule-date').setAttribute('min', today); });
         async function fetchProducts() { try { const response = await fetch(`produtos.json?v=${new Date().getTime()}`); if (!response.ok) throw new Error(`Arquivo produtos.json não encontrado.`); const data = await response.json(); lojaConfig = data.config || {}; allProducts = data.produtos; empresaWhatsappNumber = lojaConfig.whatsappNumber || empresaWhatsappNumber; applyStoreConfig(); renderCarousels(); syncCartWithProducts(); } catch (error) { console.warn(`Aviso: ${error.message}.`); renderCarousels(); } }
@@ -117,7 +122,6 @@
         function addToCartFromModal(productId) { addProductToCart(productId, document.getElementById('size-select').value); closeModal(); }
         function quickAddToCart(productId) { const product = allProducts.find(p => p.id === productId); if (!product) return; const size = (lojaConfig.habilitarTamanhos && product.tamanhos.length > 0) ? product.tamanhos[0] : 'Único'; addProductToCart(productId, size); }
         function addProductToCart(productId, size) { const product = allProducts.find(p => p.id === productId); const uniqueId = `${productId}-${size}`; const productInCart = cart.find(item => item.uniqueId === uniqueId); if (productInCart) productInCart.quantidade++; else cart.push({ ...product, tamanho: size, uniqueId, quantidade: 1 }); saveCart(); updateCartUI(); 
-            // LÓGICA DO MODAL/TOAST ALTERADA
             if (!primeiroItemAdicionado) {
                 openCartConfirmationModal();
                 primeiroItemAdicionado = true;
@@ -127,7 +131,6 @@
         }
         function showToast() { const toast = document.getElementById('toast-notification'); toast.classList.remove('translate-y-20', 'opacity-0'); setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 2000); }
         
-        // INÍCIO DAS NOVAS FUNÇÕES PARA O MODAL DE CONFIRMAÇÃO
         function openCartConfirmationModal() {
             const modal = document.getElementById('cart-confirmation-modal');
             modal.classList.remove('hidden');
@@ -143,7 +146,6 @@
 
         function goToCart() {
             closeCartConfirmationModal();
-            // Adiciona um pequeno atraso para a animação do modal de confirmação terminar
             setTimeout(() => {
                 const cartSidebar = document.getElementById('cart-sidebar');
                 if (cartSidebar.classList.contains('translate-x-full')) {
@@ -151,7 +153,6 @@
                 }
             }, 300);
         }
-        // FIM DAS NOVAS FUNÇÕES
 
         function toggleCart() { document.getElementById('cart-sidebar').classList.toggle('translate-x-full'); }
         function updateCartUI() { const cartItemsContainer = document.getElementById('cart-items'); const cartCount = document.getElementById('cart-count'); const cartTotal = document.getElementById('cart-total'); let totalEmCentavos = 0; cartItemsContainer.innerHTML = cart.length === 0 ? '<div class="text-center p-8"><i class="fas fa-shopping-cart text-4xl text-slate-300 mb-4"></i><p class="text-slate-500">Seu carrinho está vazio.</p></div>' : ''; cart.forEach(item => { totalEmCentavos += (item.preco * 100) * item.quantidade; const tamanhoHtml = lojaConfig.habilitarTamanhos && item.tamanho !== 'Único' ? `<p class="text-sm text-slate-600">Tamanho: ${item.tamanho}</p>` : ''; cartItemsContainer.innerHTML += `<div class="flex items-start justify-between mb-4 pb-4 border-b"><img src="${item.fotos[0]}" onerror="this.src='https://placehold.co/150x150/e2e8f0/64748b?text=Img'" alt="${item.nome}" class="w-20 h-20 object-cover rounded-md"><div class="flex-grow mx-3"><p class="font-bold text-slate-800">${item.nome}</p>${tamanhoHtml}<p class="text-sm font-semibold text-slate-700">R$ ${item.preco.toFixed(2).replace('.', ',')}</p><div class="flex items-center space-x-3 mt-2"><button onclick="decreaseQuantity('${item.uniqueId}')" class="w-7 h-7 bg-slate-200 rounded-full font-bold flex items-center justify-center hover:bg-slate-300">-</button><span class="font-bold text-md">${item.quantidade}</span><button onclick="increaseQuantity('${item.uniqueId}')" class="w-7 h-7 bg-slate-200 rounded-full font-bold flex items-center justify-center hover:bg-slate-300">+</button></div></div><button onclick="removeFromCart('${item.uniqueId}')" class="text-red-500 hover:text-red-700 transition-colors p-2"><i class="fas fa-trash"></i></button></div>`; }); cartCount.textContent = cart.reduce((acc, item) => acc + item.quantidade, 0); cartTotal.textContent = `R$ ${(totalEmCentavos / 100).toFixed(2).replace('.', ',')}`; validarFormularioCheckout(); }
