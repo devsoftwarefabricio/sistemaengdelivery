@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display.swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
     <style>
         body { font-family: 'Inter', sans-serif; scroll-behavior: smooth; background-color: #f8fafc; }
@@ -19,15 +19,17 @@
         ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px;}
         ::-webkit-scrollbar-thumb:hover { background: #64748b; }
         .swiper-container { position: relative; padding: 0 10px; }
-        .swiper-button-next, .swiper-button-prev { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; background-color: white; border-radius: 50%; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); display: flex; align-items: center; justify-content: center; color: #334155; transition: all 0.2s ease-in-out; }
+        .swiper-button-next, .swiper-button-prev { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; background-color: white; border-radius: 50%; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); display: none; align-items: center; justify-content: center; color: #334155; transition: all 0.2s ease-in-out; }
+        @media (min-width: 640px) { .swiper-button-next, .swiper-button-prev { display: flex; } }
         .swiper-button-next:hover, .swiper-button-prev:hover { background-color: #f1f5f9; transform: translateY(-50%) scale(1.1); }
         .swiper-button-next { right: -15px; }
         .swiper-button-prev { left: -15px; }
         .swiper-button-next::after, .swiper-button-prev::after { font-size: 18px; font-weight: bold; }
-        @media (max-width: 640px) { .swiper-button-next, .swiper-button-prev { display: none; } }
         .invalid-field { border-color: #ef4444 !important; }
         .invalid-field:focus { outline: none; box-shadow: 0 0 0 2px #ef4444; }
         input[type="date"]:invalid::-webkit-calendar-picker-indicator, input[type="time"]:invalid::-webkit-calendar-picker-indicator { filter: invert(0.5); }
+        /* CSS PARA O NOVO MODAL (BOTTOM SHEET) */
+        #bottom-sheet-container.opacity-100 { opacity: 1; }
     </style>
 </head>
 <body class="text-slate-800">
@@ -44,7 +46,8 @@
 
     <main class="container mx-auto px-4 sm:px-6 lg:px-8">
         <section class="my-8 fade-in">
-         <img src="banner.jpg" onerror="this.style.display='none'" alt="Banner do negócio" class="w-full h-48 md:h-80 object-cover object-center rounded-2xl shadow-lg">        </section>
+         <img src="banner.jpg" onerror="this.style.display='none'" alt="Banner do negócio" class="w-full h-48 md:h-80 object-cover object-center rounded-2xl shadow-lg">
+        </section>
         <section id="produtos" class="fade-in pt-8">
             <h1 class="text-3xl md:text-4xl font-extrabold text-center mb-10 text-slate-900">Nossos Produtos</h1>
             <div id="product-carousels" class="space-y-16"></div>
@@ -57,10 +60,17 @@
         </div>
     </footer>
 
+    <!-- ## CORREÇÃO DE RESPONSIVIDADE ##: Estrutura do carrinho totalmente refeita para funcionar como um app nativo -->
     <div id="cart-sidebar" class="fixed top-0 right-0 h-full w-full sm:max-w-md bg-white shadow-2xl transform translate-x-full transition-transform duration-300 ease-in-out z-50 flex flex-col">
-        <div class="p-4 flex justify-between items-center border-b"><h2 class="text-2xl font-bold text-slate-900">Seu Carrinho</h2><button onclick="toggleCart()" class="text-slate-600 hover:text-slate-900"><i class="fas fa-times fa-lg"></i></button></div>
+        <!-- 1. Cabeçalho (Fixo) -->
+        <div class="p-4 flex justify-between items-center border-b flex-shrink-0">
+            <h2 class="text-2xl font-bold text-slate-900">Seu Carrinho</h2>
+            <button onclick="toggleCart()" class="text-slate-600 hover:text-slate-900"><i class="fas fa-times fa-lg"></i></button>
+        </div>
+        <!-- 2. Área de Itens (Com rolagem) -->
         <div id="cart-items" class="flex-grow p-4 overflow-y-auto"></div>
-        <div class="p-4 border-t bg-slate-50 overflow-y-auto">
+        <!-- 3. Rodapé do Carrinho (Fixo e sempre visível) -->
+        <div id="cart-footer-sticky" class="p-4 border-t bg-slate-50 flex-shrink-0">
             <div class="flex justify-between items-center font-bold text-xl mb-4"><span>Total:</span><span id="cart-total" class="text-sky-600">R$ 0,00</span></div>
             <div class="mb-4">
                 <label class="block mb-2 font-medium text-slate-700">Como você gostaria de receber?</label>
@@ -70,7 +80,8 @@
                     <div id="agendar-option-container"><input type="radio" id="option-schedule" name="order-option" value="Agendar Mesa" class="hidden peer" onchange="handleOrderOptionChange()"><label for="option-schedule" class="block p-3 border rounded-lg cursor-pointer text-center text-sm peer-checked:bg-sky-600 peer-checked:text-white peer-checked:border-sky-600 transition-colors"><i class="fas fa-calendar-alt block mb-1"></i> Agendar</label></div>
                 </div>
             </div>
-            <div class="space-y-3 mb-4" id="checkout-form">
+            <!-- Formulário com rolagem interna para evitar que o teclado do celular cubra os campos -->
+            <div class="space-y-3 mb-4 max-h-[25vh] overflow-y-auto" id="checkout-form">
                 <div id="address-field"><input type="text" id="customer-address" placeholder="Seu endereço para entrega" class="w-full p-3 border rounded-lg"></div>
                 <div id="schedule-fields" class="hidden space-y-3">
                      <input type="date" id="schedule-date" class="w-full p-3 border rounded-lg text-gray-500" onchange="this.style.color='black'">
@@ -91,20 +102,28 @@
     <div id="product-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-50 p-4" onclick="closeModal()"><div id="modal-content" class="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col md:flex-row transform scale-95 transition-transform duration-300 overflow-y-auto" onclick="event.stopPropagation()"></div></div>
     
     <div id="toast-notification" class="fixed bottom-5 right-5 bg-slate-900 text-white py-3 px-6 rounded-lg shadow-xl transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-3"><i class="fas fa-check-circle text-green-400"></i> Item adicionado ao carrinho!</div>
-
-    <div id="cart-confirmation-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl w-full max-w-sm p-8 text-center transform scale-95 transition-transform duration-300">
-            <i class="fas fa-check-circle text-5xl text-green-500 mb-4"></i>
-            <h2 class="text-2xl font-bold text-slate-900 mb-2">Produto Adicionado!</h2>
-            <p class="text-slate-600 mb-6">O que você deseja fazer agora?</p>
-            <div class="flex flex-col gap-3">
-                <button onclick="goToCart()" class="w-full bg-sky-600 text-white py-3 rounded-lg font-bold hover:bg-sky-700 transition-colors">Ir para o Carrinho</button>
-                <button onclick="closeCartConfirmationModal()" class="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Continuar Comprando</button>
+    
+    <!-- ## CORREÇÃO DE RESPONSIVIDADE ##: Modal antigo foi removido. Este é o novo modal "Bottom Sheet" -->
+    <div id="bottom-sheet-container" class="fixed inset-0 bg-black bg-opacity-50 hidden z-[60] transition-opacity duration-300 opacity-0" onclick="closeCartConfirmationModal()">
+        <div id="bottom-sheet-content" class="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-6 transform translate-y-full transition-transform duration-300 ease-in-out" onclick="event.stopPropagation()">
+            <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-4"></div>
+            <div class="text-center">
+                <i class="fas fa-check-circle text-5xl text-green-500 mb-4"></i>
+                <h2 class="text-2xl font-bold text-slate-900 mb-2">Produto Adicionado!</h2>
+                <p class="text-slate-600 mb-6">O que você deseja fazer agora?</p>
+                <div class="flex flex-col gap-3">
+                    <button onclick="goToCart()" class="w-full bg-sky-600 text-white py-3 rounded-lg font-bold hover:bg-sky-700 transition-colors text-lg">Ir para o Carrinho</button>
+                    <button onclick="closeCartConfirmationModal()" class="w-full bg-slate-200 text-slate-800 py-3 rounded-lg font-semibold hover:bg-slate-300 transition-colors">Continuar Comprando</button>
+                </div>
             </div>
         </div>
     </div>
+    
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js" defer></script>
     <script>
+        // ## CORREÇÃO DE CARRINHO ##: Lógica de armazenamento alterada para sessionStorage para garantir compras individuais.
+        // As demais lógicas foram mantidas e ajustadas para as novas interfaces.
+
         let allProducts = []; let cart = []; let lojaConfig = {}; let empresaWhatsappNumber = '5511999999999';
         let primeiroItemAdicionado = false;
 
@@ -118,24 +137,19 @@
         function quickAddToCart(productId) { const product = allProducts.find(p => p.id === productId); if (!product) return; const size = (lojaConfig.habilitarTamanhos && product.tamanhos.length > 0) ? product.tamanhos[0] : 'Único'; addProductToCart(productId, size); }
         function addProductToCart(productId, size) { const product = allProducts.find(p => p.id === productId); const uniqueId = `${productId}-${size}`; const productInCart = cart.find(item => item.uniqueId === uniqueId); if (productInCart) productInCart.quantidade++; else cart.push({ ...product, tamanho: size, uniqueId, quantidade: 1 }); saveCart(); updateCartUI(); if (!primeiroItemAdicionado) { openCartConfirmationModal(); primeiroItemAdicionado = true; } else { showToast(); } }
         function showToast() { const toast = document.getElementById('toast-notification'); toast.classList.remove('translate-y-20', 'opacity-0'); setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 2000); }
-        function openCartConfirmationModal() { const modal = document.getElementById('cart-confirmation-modal'); modal.classList.remove('hidden'); modal.classList.add('flex'); setTimeout(() => modal.querySelector('div').classList.remove('scale-95'), 10); }
-        function closeCartConfirmationModal() { const modal = document.getElementById('cart-confirmation-modal'); modal.querySelector('div').classList.add('scale-95'); setTimeout(() => modal.classList.add('hidden'), 300); }
+        
+        // ## CORREÇÃO DE RESPONSIVIDADE ##: Funções para controlar o novo "Bottom Sheet"
+        function openCartConfirmationModal() { const container = document.getElementById('bottom-sheet-container'); const content = document.getElementById('bottom-sheet-content'); container.classList.remove('hidden'); setTimeout(() => { container.classList.add('opacity-100'); content.classList.remove('translate-y-full'); }, 10); }
+        function closeCartConfirmationModal() { const container = document.getElementById('bottom-sheet-container'); const content = document.getElementById('bottom-sheet-content'); container.classList.remove('opacity-100'); content.classList.add('translate-y-full'); setTimeout(() => { container.classList.add('hidden'); }, 300); }
         function goToCart() { closeCartConfirmationModal(); setTimeout(() => { const cartSidebar = document.getElementById('cart-sidebar'); if (cartSidebar.classList.contains('translate-x-full')) { toggleCart(); } }, 300); }
+        
         function toggleCart() { document.getElementById('cart-sidebar').classList.toggle('translate-x-full'); }
-        function updateCartUI() { const cartItemsContainer = document.getElementById('cart-items'); const cartCount = document.getElementById('cart-count'); const cartTotal = document.getElementById('cart-total'); let totalEmCentavos = 0; cartItemsContainer.innerHTML = cart.length === 0 ? '<div class="text-center p-8"><i class="fas fa-shopping-cart text-4xl text-slate-300 mb-4"></i><p class="text-slate-500">Seu carrinho está vazio.</p></div>' : ''; cart.forEach(item => { totalEmCentavos += (item.preco * 100) * item.quantidade; const tamanhoHtml = lojaConfig.habilitarTamanhos && item.tamanho !== 'Único' ? `<p class="text-sm text-slate-600">Tamanho: ${item.tamanho}</p>` : ''; cartItemsContainer.innerHTML += `<div class="flex items-start justify-between mb-4 pb-4 border-b"><img src="${item.fotos[0]}" onerror="this.src='https://placehold.co/150x150/e2e8f0/64748b?text=Img'" alt="${item.nome}" class="w-20 h-20 object-cover rounded-md"><div class="flex-grow mx-3"><p class="font-bold text-slate-800">${item.nome}</p>${tamanhoHtml}<p class="text-sm font-semibold text-slate-700">R$ ${item.preco.toFixed(2).replace('.', ',')}</p><div class="flex items-center space-x-3 mt-2"><button onclick="decreaseQuantity('${item.uniqueId}')" class="w-7 h-7 bg-slate-200 rounded-full font-bold flex items-center justify-center hover:bg-slate-300">-</button><span class="font-bold text-md">${item.quantidade}</span><button onclick="increaseQuantity('${item.uniqueId}')" class="w-7 h-7 bg-slate-200 rounded-full font-bold flex items-center justify-center hover:bg-slate-300">+</button></div></div><button onclick="removeFromCart('${item.uniqueId}')" class="text-red-500 hover:text-red-700 transition-colors p-2"><i class="fas fa-trash"></i></button></div>`; }); cartCount.textContent = cart.reduce((acc, item) => acc + item.quantidade, 0); cartTotal.textContent = `R$ ${(totalEmCentavos / 100).toFixed(2).replace('.', ',')}`; validarFormularioCheckout(); }
+        function updateCartUI() { const cartItemsContainer = document.getElementById('cart-items'); const cartCount = document.getElementById('cart-count'); const cartTotal = document.getElementById('cart-total'); let totalEmCentavos = 0; cartItemsContainer.innerHTML = cart.length === 0 ? '<div class="text-center p-8"><i class="fas fa-shopping-cart text-4xl text-slate-300 mb-4"></i><p class="text-slate-500">Seu carrinho está vazio.</p></div>' : ''; cart.forEach(item => { totalEmCentavos += (item.preco * 100) * item.quantidade; const tamanhoHtml = lojaConfig.habilitarTamanhos && item.tamanho !== 'Único' ? `<p class="text-sm text-slate-600">Tamanho: ${item.tamanho}</p>` : ''; cartItemsContainer.innerHTML += `<div class="flex items-start justify-between mb-4 pb-4 border-b last:border-b-0"><img src="${item.fotos[0]}" onerror="this.src='https://placehold.co/150x150/e2e8f0/64748b?text=Img'" alt="${item.nome}" class="w-20 h-20 object-cover rounded-md"><div class="flex-grow mx-3"><p class="font-bold text-slate-800">${item.nome}</p>${tamanhoHtml}<p class="text-sm font-semibold text-slate-700">R$ ${item.preco.toFixed(2).replace('.', ',')}</p><div class="flex items-center space-x-3 mt-2"><button onclick="decreaseQuantity('${item.uniqueId}')" class="w-7 h-7 bg-slate-200 rounded-full font-bold flex items-center justify-center hover:bg-slate-300">-</button><span class="font-bold text-md">${item.quantidade}</span><button onclick="increaseQuantity('${item.uniqueId}')" class="w-7 h-7 bg-slate-200 rounded-full font-bold flex items-center justify-center hover:bg-slate-300">+</button></div></div><button onclick="removeFromCart('${item.uniqueId}')" class="text-red-500 hover:text-red-700 transition-colors p-2"><i class="fas fa-trash"></i></button></div>`; }); cartCount.textContent = cart.reduce((acc, item) => acc + item.quantidade, 0); cartTotal.textContent = `R$ ${(totalEmCentavos / 100).toFixed(2).replace('.', ',')}`; validarFormularioCheckout(); }
         const increaseQuantity = (id) => changeQuantity(id, 1); const decreaseQuantity = (id) => changeQuantity(id, -1);
         function changeQuantity(uniqueId, amount) { const item = cart.find(item => item.uniqueId === uniqueId); if (item) { item.quantidade += amount; if (item.quantidade <= 0) removeFromCart(uniqueId); else { saveCart(); updateCartUI(); } } }
         const removeFromCart = (id) => { cart = cart.filter(item => item.uniqueId !== id); saveCart(); updateCartUI(); };
-        
-        // ALTERAÇÃO CRÍTICA APLICADA AQUI: Trocado localStorage por sessionStorage
-        function saveCart() {
-            sessionStorage.setItem('lojaCarrinho', JSON.stringify(cart));
-        }
-        function loadCart() {
-            const savedCart = sessionStorage.getItem('lojaCarrinho');
-            if (savedCart) cart = JSON.parse(savedCart);
-        }
-
+        function saveCart() { sessionStorage.setItem('lojaCarrinho', JSON.stringify(cart)); }
+        function loadCart() { const savedCart = sessionStorage.getItem('lojaCarrinho'); if (savedCart) cart = JSON.parse(savedCart); }
         function syncCartWithProducts() { if (cart.length === 0 || allProducts.length === 0) { updateCartUI(); return; } let cartFoiModificado = false; const carrinhoAtualizado = cart.map(itemNoCarrinho => { const produtoNaLoja = allProducts.find(p => p.id === itemNoCarrinho.id); if (!produtoNaLoja) { cartFoiModificado = true; return null; } const dadosParaAtualizar = { preco: produtoNaLoja.preco, nome: produtoNaLoja.nome, fotos: produtoNaLoja.fotos }; Object.assign(itemNoCarrinho, dadosParaAtualizar); if (itemNoCarrinho.preco !== produtoNaLoja.preco) cartFoiModificado = true; return itemNoCarrinho; }).filter(Boolean); cart = carrinhoAtualizado; if (cartFoiModificado) { saveCart(); showToast('Seu carrinho foi atualizado.'); } updateCartUI(); }
         function handleOrderOptionChange() { const selectedOption = document.querySelector('input[name="order-option"]:checked').value; const addressField = document.getElementById('address-field'); const scheduleFields = document.getElementById('schedule-fields'); const addressInput = document.getElementById('customer-address'); const scheduleInputs = scheduleFields.querySelectorAll('input'); addressInput.required = (selectedOption === 'Delivery'); addressField.style.display = (selectedOption === 'Delivery') ? 'block' : 'none'; scheduleInputs.forEach(input => input.required = (selectedOption === 'Agendar Mesa')); scheduleFields.style.display = (selectedOption === 'Agendar Mesa') ? 'block' : 'none'; validarFormularioCheckout(); }
         function validarFormularioCheckout() { const form = document.getElementById('checkout-form'); const inputs = form.querySelectorAll('input[required], select[required]'); const finalizeButton = document.getElementById('finalize-button'); let isFormValid = true; inputs.forEach(input => { const value = input.value.trim(); if (!value || (input.tagName === 'SELECT' && input.selectedIndex === 0)) { isFormValid = false; input.classList.add('invalid-field'); } else { input.classList.remove('invalid-field'); } }); const isAgendamentoValido = document.querySelector('input[name="order-option"]:checked').value === 'Agendar Mesa'; finalizeButton.disabled = !(isFormValid && (cart.length > 0 || isAgendamentoValido)); }
