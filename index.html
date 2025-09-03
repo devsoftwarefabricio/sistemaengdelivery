@@ -11,9 +11,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display.swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
     <style>
-        body { font-family: 'Inter', sans-serif; scroll-behavior: smooth; background-color: #f8fafc; }
-        /* ## CORREÇÃO DE RESPONSIVIDADE ##: A classe 'overflow-hidden' será adicionada via JS para travar o scroll */
-        body.overflow-hidden { overflow: hidden; }
+        /* ## CORREÇÃO DE ROLAGEM LATERAL ##: Esta regra impede que a página role para os lados no celular */
+        html, body {
+            overflow-x: hidden;
+            width: 100%;
+        }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            scroll-behavior: smooth; 
+            background-color: #f8fafc; 
+            position: relative; /* Necessário para o overflow-x funcionar corretamente em todos os cenários */
+        }
+        body.overflow-hidden { overflow-y: hidden; } /* Mantém o bloqueio de scroll vertical para modais */
         .fade-in { animation: fadeIn 0.8s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         ::-webkit-scrollbar { width: 8px; }
@@ -119,7 +128,6 @@
         let allProducts = []; let cart = []; let lojaConfig = {}; let empresaWhatsappNumber = '5511999999999';
         let primeiroItemAdicionado = false;
 
-        // ## CORREÇÃO DE RESPONSIVIDADE ##: Nova função para travar a rolagem da página
         function toggleBodyScroll(lock) {
             document.body.classList.toggle('overflow-hidden', lock);
         }
@@ -139,12 +147,12 @@
             modal.classList.remove('hidden'); 
             modal.classList.add('flex'); 
             setTimeout(() => modalContent.classList.remove('scale-95'), 10);
-            toggleBodyScroll(true); // Trava o scroll
+            toggleBodyScroll(true);
         }
         function closeModal() { 
             document.getElementById('product-modal').classList.add('hidden'); 
             document.getElementById('modal-content').classList.add('scale-95');
-            toggleBodyScroll(false); // Destrava o scroll
+            toggleBodyScroll(false);
         }
 
         function addToCartFromModal(productId) { addProductToCart(productId, document.getElementById('size-select').value); closeModal(); }
@@ -152,8 +160,8 @@
         function addProductToCart(productId, size) { const product = allProducts.find(p => p.id === productId); const uniqueId = `${productId}-${size}`; const productInCart = cart.find(item => item.uniqueId === uniqueId); if (productInCart) productInCart.quantidade++; else cart.push({ ...product, tamanho: size, uniqueId, quantidade: 1 }); saveCart(); updateCartUI(); if (!primeiroItemAdicionado) { openCartConfirmationModal(); primeiroItemAdicionado = true; } else { showToast(); } }
         function showToast() { const toast = document.getElementById('toast-notification'); toast.classList.remove('translate-y-20', 'opacity-0'); setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 2000); }
         
-        function openCartConfirmationModal() { const container = document.getElementById('bottom-sheet-container'); const content = document.getElementById('bottom-sheet-content'); container.classList.remove('hidden'); setTimeout(() => { container.classList.add('opacity-100'); content.classList.remove('translate-y-full'); }, 10); toggleBodyScroll(true); } // Trava o scroll
-        function closeCartConfirmationModal() { const container = document.getElementById('bottom-sheet-container'); const content = document.getElementById('bottom-sheet-content'); container.classList.remove('opacity-100'); content.classList.add('translate-y-full'); setTimeout(() => { container.classList.add('hidden'); }, 300); toggleBodyScroll(false); } // Destrava o scroll
+        function openCartConfirmationModal() { const container = document.getElementById('bottom-sheet-container'); const content = document.getElementById('bottom-sheet-content'); container.classList.remove('hidden'); setTimeout(() => { container.classList.add('opacity-100'); content.classList.remove('translate-y-full'); }, 10); toggleBodyScroll(true); }
+        function closeCartConfirmationModal() { const container = document.getElementById('bottom-sheet-container'); const content = document.getElementById('bottom-sheet-content'); container.classList.remove('opacity-100'); content.classList.add('translate-y-full'); setTimeout(() => { container.classList.add('hidden'); }, 300); toggleBodyScroll(false); }
         
         function goToCart() { closeCartConfirmationModal(); setTimeout(() => { if (document.getElementById('cart-sidebar').classList.contains('translate-x-full')) { toggleCart(); } }, 300); }
         
@@ -161,7 +169,7 @@
             const cartSidebar = document.getElementById('cart-sidebar');
             const isOpening = cartSidebar.classList.contains('translate-x-full');
             cartSidebar.classList.toggle('translate-x-full');
-            toggleBodyScroll(isOpening); // Trava se estiver abrindo, destrava se estiver fechando
+            toggleBodyScroll(isOpening);
         }
 
         function updateCartUI() { const cartItemsContainer = document.getElementById('cart-items'); const cartCount = document.getElementById('cart-count'); const cartTotal = document.getElementById('cart-total'); let totalEmCentavos = 0; cartItemsContainer.innerHTML = cart.length === 0 ? '<div class="text-center p-8"><i class="fas fa-shopping-cart text-4xl text-slate-300 mb-4"></i><p class="text-slate-500">Seu carrinho está vazio.</p></div>' : ''; cart.forEach(item => { totalEmCentavos += (item.preco * 100) * item.quantidade; const tamanhoHtml = lojaConfig.habilitarTamanhos && item.tamanho !== 'Único' ? `<p class="text-sm text-slate-600">Tamanho: ${item.tamanho}</p>` : ''; cartItemsContainer.innerHTML += `<div class="flex items-start justify-between mb-4 pb-4 border-b last:border-b-0"><img src="${item.fotos[0]}" onerror="this.src='https://placehold.co/150x150/e2e8f0/64748b?text=Img'" alt="${item.nome}" class="w-20 h-20 object-cover rounded-md"><div class="flex-grow mx-3"><p class="font-bold text-slate-800">${item.nome}</p>${tamanhoHtml}<p class="text-sm font-semibold text-slate-700">R$ ${item.preco.toFixed(2).replace('.', ',')}</p><div class="flex items-center space-x-3 mt-2"><button onclick="decreaseQuantity('${item.uniqueId}')" class="w-7 h-7 bg-slate-200 rounded-full font-bold flex items-center justify-center hover:bg-slate-300">-</button><span class="font-bold text-md">${item.quantidade}</span><button onclick="increaseQuantity('${item.uniqueId}')" class="w-7 h-7 bg-slate-200 rounded-full font-bold flex items-center justify-center hover:bg-slate-300">+</button></div></div><button onclick="removeFromCart('${item.uniqueId}')" class="text-red-500 hover:text-red-700 transition-colors p-2"><i class="fas fa-trash"></i></button></div>`; }); cartCount.textContent = cart.reduce((acc, item) => acc + item.quantidade, 0); cartTotal.textContent = `R$ ${(totalEmCentavos / 100).toFixed(2).replace('.', ',')}`; validarFormularioCheckout(); }
